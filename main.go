@@ -21,9 +21,8 @@ import (
 )
 
 type envConfig struct {
-	pagerdutyAuthToken string `required:"true" split_words:"true"`
-	slackAuthToken     string `required:"true" split_words:"true"`
-	dupa               string `required:"true" split_words:"true"`
+	PagerdutyAuthToken string `required:"true" split_words:"true"`
+	SlackAuthToken     string `required:"true" split_words:"true"`
 }
 
 func main() {
@@ -33,11 +32,10 @@ func main() {
 		log.Fatal(err.Error())
 	}
 
-	fmt.Println("slack: ", env.slackAuthToken)
-	pdclient := pagerduty.NewClient(env.pagerdutyAuthToken)
+	pdclient := pagerduty.NewClient(env.PagerdutyAuthToken)
 	conn := client.NewApiClient(pdclient)
 
-	bot := slacker.NewClient(env.dupa)
+	bot := slacker.NewClient(env.SlackAuthToken)
 
 	bot.Init(func() {
 		log.Println("Connected!")
@@ -55,7 +53,7 @@ func main() {
 		fmt.Println(event)
 	})
 	oncallMonth := &slacker.CommandDefinition{
-		Description: "PagerDuty oncall current month summary",
+		Description: "PagerDuty oncall current month summary with profit",
 		Example:     "oncall month PCKO8FO",
 		Handler: func(botCtx slacker.BotContext, request slacker.Request, response slacker.ResponseWriter) {
 			onCall := &oncall.AdminOnDutyList{OnCall: conn}
@@ -82,7 +80,10 @@ func main() {
 			pdTeam := request.StringParam("pdteam", "PU7IVK3")
 			pdTeamList := []string{}
 			pdTeamList = append(pdTeamList, pdTeam)
-			incidentOutls := incident.GetTeam(pdTeamList)
+			incidentOutls, err := incident.GetTeam(pdTeamList)
+			if err != nil {
+				response.ReportError(errors.New("Oops!"))
+			}
 			response.Typing()
 			time.Sleep(time.Second)
 			response.Reply(incidentOutls)
@@ -97,7 +98,10 @@ func main() {
 			pdTeam := request.StringParam("pdteam", "PU7IVK3")
 			pdTeamList := []string{}
 			pdTeamList = append(pdTeamList, pdTeam)
-			serviceOutls := service.GetTeam(pdTeamList)
+			serviceOutls, err := service.GetTeam(pdTeamList)
+			if err != nil {
+				response.ReportError(errors.New("Oops!"))
+			}
 			response.Typing()
 			time.Sleep(time.Second)
 			response.Reply(serviceOutls)
@@ -112,7 +116,10 @@ func main() {
 			pdTeam := request.StringParam("pdteam", "PU7IVK3")
 			pdTeamList := []string{}
 			pdTeamList = append(pdTeamList, pdTeam)
-			maintenanceOutls := maintenance.GetMaintenance(pdTeamList)
+			maintenanceOutls, err := maintenance.GetMaintenance(pdTeamList)
+			if err != nil {
+				response.ReportError(errors.New("Oops!"))
+			}
 			response.Typing()
 			time.Sleep(time.Second)
 			response.Reply(maintenanceOutls)
@@ -120,13 +127,16 @@ func main() {
 	}
 
 	maintenanceCreateTeam := &slacker.CommandDefinition{
-		Description: "PagerDuty create maintenance for specific service",
+		Description: "PagerDuty create maintenance window for specific service from current time + given duration",
 		Example:     "maintenace create PHJN9RO 4h",
 		Handler: func(botCtx slacker.BotContext, request slacker.Request, response slacker.ResponseWriter) {
 			maintenance := &maintenance.Maintenances{Maintenance: conn}
 			pdServiceID := request.StringParam("pdservice", "PR1XCPX")
 			toHour := request.StringParam("pdhour", "4h")
-			maintenanceCreateOutls := maintenance.CreateMaintenance(pdServiceID, toHour)
+			maintenanceCreateOutls, err := maintenance.CreateMaintenance(pdServiceID, toHour)
+			if err != nil {
+				response.ReportError(errors.New("Oops!"))
+			}
 			response.Reply(maintenanceCreateOutls)
 
 		},

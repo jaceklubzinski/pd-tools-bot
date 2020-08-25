@@ -2,15 +2,13 @@ package client
 
 import (
 	"github.com/PagerDuty/go-pagerduty"
-	"github.com/jaceklubzinski/pd-tools-bot/pkg/base"
 )
 
 type ServiceClient interface {
-	ListServices(opts pagerduty.ListServiceOptions) *pagerduty.ListServiceResponse
+	ListServices(opts pagerduty.ListServiceOptions) (*pagerduty.ListServiceResponse, error)
 }
 
-func (c *ApiClient) ListServices(opts pagerduty.ListServiceOptions) *pagerduty.ListServiceResponse {
+func (c *ApiClient) ListServices(opts pagerduty.ListServiceOptions) (*pagerduty.ListServiceResponse, error) {
 	eps, err := c.client.ListServices(opts)
-	base.CheckErr(err)
-	return eps
+	return eps, err
 }

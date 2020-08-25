@@ -2,23 +2,20 @@ package client
 
 import (
 	"github.com/PagerDuty/go-pagerduty"
-	"github.com/jaceklubzinski/pd-tools-bot/pkg/base"
 )
 
 type MaintenanceClient interface {
-	ListMaintenance(opts pagerduty.ListMaintenanceWindowsOptions) *pagerduty.ListMaintenanceWindowsResponse
-	CreateMaintenance(o pagerduty.MaintenanceWindow) *pagerduty.MaintenanceWindow
+	ListMaintenance(opts pagerduty.ListMaintenanceWindowsOptions) (*pagerduty.ListMaintenanceWindowsResponse, error)
+	CreateMaintenance(o pagerduty.MaintenanceWindow) (*pagerduty.MaintenanceWindow, error)
 }
 
-func (c *ApiClient) ListMaintenance(opts pagerduty.ListMaintenanceWindowsOptions) *pagerduty.ListMaintenanceWindowsResponse {
+func (c *ApiClient) ListMaintenance(opts pagerduty.ListMaintenanceWindowsOptions) (*pagerduty.ListMaintenanceWindowsResponse, error) {
 	eps, err := c.client.ListMaintenanceWindows(opts)
-	base.CheckErr(err)
-	return eps
+	return eps, err
 }
 
-func (c *ApiClient) CreateMaintenance(o pagerduty.MaintenanceWindow) *pagerduty.MaintenanceWindow {
+func (c *ApiClient) CreateMaintenance(o pagerduty.MaintenanceWindow) (*pagerduty.MaintenanceWindow, error) {
 	from := "pdbot"
 	eps, err := c.client.CreateMaintenanceWindow(from, o)
-	base.CheckErr(err)
-	return eps
+	return eps, err
 }

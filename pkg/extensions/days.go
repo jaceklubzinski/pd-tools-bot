@@ -24,10 +24,9 @@ func StringToDate(value string) time.Time {
 }
 
 //AddDurationToDate add duration to start date
-func AddDurationToDate(start string, timer string) string {
+func AddDurationToDate(start string, timer string) (string, error) {
 	layoutISO := "2006-01-02 15:04:05"
 	startDate := StringToDate(start)
 	timerDuration, err := time.ParseDuration(timer)
-	base.CheckErr(err)
-	return startDate.Add(timerDuration).Format(layoutISO)
+	return startDate.Add(timerDuration).Format(layoutISO), err
 }

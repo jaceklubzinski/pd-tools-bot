@@ -13,22 +13,28 @@ type Maintenances struct {
 	Maintenance client.MaintenanceClient
 }
 
-func (s *Maintenances) GetMaintenance(teamID []string) (strs string) {
+func (s *Maintenances) GetMaintenance(teamID []string) (strs string, err error) {
 	opts := pagerduty.ListMaintenanceWindowsOptions{
 		Filter:  "ongoing",
 		TeamIDs: teamID,
 	}
-	getMaintenance := s.Maintenance.ListMaintenance(opts)
+	getMaintenance, err := s.Maintenance.ListMaintenance(opts)
+	if err != nil {
+		return "", err
+	}
 	for _, p := range getMaintenance.MaintenanceWindows {
 		strstmp := fmt.Sprintf("ID: %s Services: %s Start Time: %s End Time: %s Description: %s\n", p.APIObject.Summary, p.StartTime, p.EndTime, p.Description)
 		strs = strs + strstmp
 	}
-	return strs
+	return strs, nil
 }
 
-func (s *Maintenances) CreateMaintenance(serviceID string, addHour string) (strs string) {
+func (s *Maintenances) CreateMaintenance(serviceID string, addHour string) (strs string, err error) {
 	startToday := time.Now().Format("2006-01-02 15:04:05")
-	endHours := extensions.AddDurationToDate(startToday, addHour)
+	endHours, err := extensions.AddDurationToDate(startToday, addHour)
+	if err != nil {
+		return "", err
+	}
 	opts := pagerduty.MaintenanceWindow{
 		StartTime: startToday,
 		EndTime:   endHours,
@@ -39,7 +45,10 @@ func (s *Maintenances) CreateMaintenance(serviceID string, addHour string) (strs
 			},
 		},
 	}
-	m := s.Maintenance.CreateMaintenance(opts)
+	m, err := s.Maintenance.CreateMaintenance(opts)
+	if err != nil {
+		return "", err
+	}
 	strs = fmt.Sprintf("%s - %s - %s", m.Services, m.StartTime, m.EndTime)
-	return strs
+	return strs, nil
 }
