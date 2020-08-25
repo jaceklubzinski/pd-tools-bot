@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	"github.com/PagerDuty/go-pagerduty"
@@ -17,16 +16,28 @@ import (
 	"github.com/jaceklubzinski/pd-tools-bot/pkg/schedule"
 	"github.com/jaceklubzinski/pd-tools-bot/pkg/services"
 	team "github.com/jaceklubzinski/pd-tools-bot/pkg/teams"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/shomali11/slacker"
-	"github.com/slack-go/slack"
 )
+
+type envConfig struct {
+	pagerdutyAuthToken string `required:"true" split_words:"true"`
+	slackAuthToken     string `required:"true" split_words:"true"`
+	dupa               string `required:"true" split_words:"true"`
+}
 
 func main() {
 
-	pdclient := pagerduty.NewClient(os.Getenv("PAGERDUTY_AUTH_TOKEN"))
+	var env envConfig
+	if err := envconfig.Process("pdbot", &env); err != nil {
+		log.Fatal(err.Error())
+	}
+
+	fmt.Println("slack: ", env.slackAuthToken)
+	pdclient := pagerduty.NewClient(env.pagerdutyAuthToken)
 	conn := client.NewApiClient(pdclient)
 
-	bot := slacker.NewClient("xoxb-2379642957-1258507282119-TyhWroFWeM5vsWPB0MBobrb5")
+	bot := slacker.NewClient(env.dupa)
 
 	bot.Init(func() {
 		log.Println("Connected!")
@@ -145,56 +156,6 @@ func main() {
 		},
 	}
 
-	interactiveTest := &slacker.CommandDefinition{
-		Description: "PagerDuty intearctive test",
-		Example:     "team list",
-		Handler: func(botCtx slacker.BotContext, request slacker.Request, response slacker.ResponseWriter) {
-			attachment := slack.Attachment{
-				Text:       "Which beer do you want? :beer:",
-				Color:      "#f9a41b",
-				CallbackID: "beer",
-				Actions: []slack.AttachmentAction{
-					{
-						Name: "select",
-						Type: "select",
-						Options: []slack.AttachmentActionOption{
-							{
-								Text:  "Asahi Super Dry",
-								Value: "Asahi Super Dry",
-							},
-							{
-								Text:  "Kirin Lager Beer",
-								Value: "Kirin Lager Beer",
-							},
-							{
-								Text:  "Sapporo Black Label",
-								Value: "Sapporo Black Label",
-							},
-							{
-								Text:  "Suntory Malts",
-								Value: "Suntory Malts",
-							},
-							{
-								Text:  "Yona Yona Ale",
-								Value: "Yona Yona Ale",
-							},
-						},
-					},
-
-					{
-						Name:  "cancel",
-						Text:  "Cancel",
-						Type:  "button",
-						Style: "danger",
-					},
-				},
-			}
-			attachments := []slack.Attachment{}
-			attachments = append(attachments, attachment)
-			response.Reply("", slacker.WithAttachments(attachments))
-		},
-	}
-
 	bot.Command("oncall month <pdschedule>", oncallMonth)
 	bot.Command("incident list <pdteam>", incidentListTeam)
 	bot.Command("schedule list", scheduleList)
@@ -202,8 +163,6 @@ func main() {
 	bot.Command("service list <pdteam>", serviceListTeam)
 	bot.Command("maintenance list <pdteam>", maintenanceListTeam)
 	bot.Command("maintenance create <pdservice> <pdhour>", maintenanceCreateTeam)
-
-	bot.Command("test", interactiveTest)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
