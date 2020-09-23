@@ -8,10 +8,12 @@ import (
 	"github.com/jaceklubzinski/pd-tools-bot/pkg/client"
 )
 
+//Services Pagerduty client for services
 type Services struct {
 	Service client.ServiceClient
 }
 
+//GetAll list all PagerDuty services
 func (s *Services) GetAll() {
 	var opts pagerduty.ListServiceOptions
 	getAll, err := s.Service.ListServices(opts)
@@ -21,6 +23,7 @@ func (s *Services) GetAll() {
 	}
 }
 
+//GetTeam list all PagerDuty services for specific teams
 func (s *Services) GetTeam(teamID []string) (strs string, err error) {
 	opts := pagerduty.ListServiceOptions{
 		TeamIDs: teamID,

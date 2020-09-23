@@ -3,6 +3,7 @@ package schedule
 import (
 	"fmt"
 
+	"github.com/PagerDuty/go-pagerduty"
 	"github.com/jaceklubzinski/pd-tools-bot/pkg/client"
 )
 
@@ -18,6 +19,12 @@ func (c *NewSchedule) PrintSchedules() (strs string) {
 		strs = strs + strstmp
 	}
 	return strs
+}
+
+// PrintSchedules list of all available schedules in PagerDuty
+func (c *NewSchedule) GetAll() (schedules []pagerduty.Schedule) {
+	client := c.Schedule.ListSchedules()
+	return client.Schedules
 }
 
 // GetScheduleID transform schedule name to ID

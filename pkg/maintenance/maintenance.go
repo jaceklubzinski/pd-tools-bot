@@ -9,11 +9,13 @@ import (
 	"github.com/jaceklubzinski/pd-tools-bot/pkg/extensions"
 )
 
+//Maintenances PagerDuty client
 type Maintenances struct {
 	Maintenance client.MaintenanceClient
 }
 
-func (s *Maintenances) GetMaintenance(teamID []string) (strs string, err error) {
+//Get List maintenace windows from PagerDuty
+func (s *Maintenances) Get(teamID []string) (strs string, err error) {
 	opts := pagerduty.ListMaintenanceWindowsOptions{
 		Filter:  "ongoing",
 		TeamIDs: teamID,
@@ -23,13 +25,14 @@ func (s *Maintenances) GetMaintenance(teamID []string) (strs string, err error) 
 		return "", err
 	}
 	for _, p := range getMaintenance.MaintenanceWindows {
-		strstmp := fmt.Sprintf("ID: %s Services: %s Start Time: %s End Time: %s Description: %s\n", p.APIObject.Summary, p.StartTime, p.EndTime, p.Description)
+		strstmp := fmt.Sprintf("Services: %s Start Time: %s End Time: %s Description: %s\n", p.APIObject.Summary, p.StartTime, p.EndTime, p.Description)
 		strs = strs + strstmp
 	}
 	return strs, nil
 }
 
-func (s *Maintenances) CreateMaintenance(serviceID string, addHour string) (strs string, err error) {
+//Create maintanence window for PagerDuty service
+func (s *Maintenances) Create(serviceID string, addHour string) (strs string, err error) {
 	startToday := time.Now().Format("2006-01-02 15:04:05")
 	endHours, err := extensions.AddDurationToDate(startToday, addHour)
 	if err != nil {

@@ -26,14 +26,13 @@ type envConfig struct {
 }
 
 func main() {
-
 	var env envConfig
 	if err := envconfig.Process("pdbot", &env); err != nil {
 		log.Fatal(err.Error())
 	}
 
 	pdclient := pagerduty.NewClient(env.PagerdutyAuthToken)
-	conn := client.NewApiClient(pdclient)
+	conn := client.NewAPIClient(pdclient)
 
 	bot := slacker.NewClient(env.SlackAuthToken)
 
@@ -52,6 +51,29 @@ func main() {
 	bot.DefaultEvent(func(event interface{}) {
 		fmt.Println(event)
 	})
+
+	authorizedChannels := []string{"G017ZRWTL85"}
+
+	oncallDuty := &slacker.CommandDefinition{
+		Description: "PagerDuty today oncall user",
+		Example:     "oncall today",
+		Handler: func(botCtx slacker.BotContext, request slacker.Request, response slacker.ResponseWriter) {
+			onCall := &oncall.AdminOnDutyList{OnCall: conn}
+			schedule := &schedule.NewSchedule{Schedule: conn}
+			today := time.Now()
+			for _, pdschedule := range schedule.GetAll() {
+				onCall.UsersOnCallOptions(today.String(), today.String(), pdschedule.APIObject.ID)
+				if err := onCall.UsersOnCall(today, today); err != nil {
+					response.ReportError(errors.New("something went wrong during processing bot command"))
+				}
+				oncall := onCall.PrintTodayDuty(pdschedule.Name)
+				response.Typing()
+				time.Sleep(time.Second)
+				response.Reply(oncall)
+			}
+		},
+	}
+
 	oncallMonth := &slacker.CommandDefinition{
 		Description: "PagerDuty oncall current month summary with profit",
 		Example:     "oncall month PCKO8FO",
@@ -63,7 +85,7 @@ func main() {
 			end := extensions.EndOfMonth(today)
 			onCall.UsersOnCallOptions(start.String(), end.String(), pdschedule)
 			if err := onCall.UsersOnCall(start, end); err != nil {
-				response.ReportError(errors.New("Oops!"))
+				response.ReportError(errors.New("something went wrong during processing bot command"))
 			}
 			oncall := onCall.PrintDutySummary(true)
 			response.Typing()
@@ -82,7 +104,26 @@ func main() {
 			pdTeamList = append(pdTeamList, pdTeam)
 			incidentOutls, err := incident.GetTeam(pdTeamList)
 			if err != nil {
-				response.ReportError(errors.New("Oops!"))
+				response.ReportError(errors.New("something went wrong during processing bot command"))
+			}
+			response.Typing()
+			time.Sleep(time.Second)
+			response.Reply(incidentOutls)
+		},
+	}
+
+	incidentListTeamDuty := &slacker.CommandDefinition{
+		Description: "PagerDuty list all incident incident for specific team and since defined hours",
+		Example:     "incident duty PHJN9RO 24h",
+		Handler: func(botCtx slacker.BotContext, request slacker.Request, response slacker.ResponseWriter) {
+			incident := incident.Incidents{Incident: conn}
+			toHour := request.StringParam("pdhour", "24h")
+			pdTeam := request.StringParam("pdteam", "PU7IVK3")
+			pdTeamList := []string{}
+			pdTeamList = append(pdTeamList, pdTeam)
+			incidentOutls, err := incident.GetTeamDuty(pdTeamList, toHour)
+			if err != nil {
+				response.ReportError(errors.New("something went wrong during processing bot command"))
 			}
 			response.Typing()
 			time.Sleep(time.Second)
@@ -100,7 +141,7 @@ func main() {
 			pdTeamList = append(pdTeamList, pdTeam)
 			serviceOutls, err := service.GetTeam(pdTeamList)
 			if err != nil {
-				response.ReportError(errors.New("Oops!"))
+				response.ReportError(errors.New("something went wrong during processing bot command"))
 			}
 			response.Typing()
 			time.Sleep(time.Second)
@@ -116,9 +157,9 @@ func main() {
 			pdTeam := request.StringParam("pdteam", "PU7IVK3")
 			pdTeamList := []string{}
 			pdTeamList = append(pdTeamList, pdTeam)
-			maintenanceOutls, err := maintenance.GetMaintenance(pdTeamList)
+			maintenanceOutls, err := maintenance.Get(pdTeamList)
 			if err != nil {
-				response.ReportError(errors.New("Oops!"))
+				response.ReportError(errors.New("something went wrong during processing bot command"))
 			}
 			response.Typing()
 			time.Sleep(time.Second)
@@ -129,16 +170,18 @@ func main() {
 	maintenanceCreateTeam := &slacker.CommandDefinition{
 		Description: "PagerDuty create maintenance window for specific service from current time + given duration",
 		Example:     "maintenace create PHJN9RO 4h",
+		AuthorizationFunc: func(botCtx slacker.BotContext, request slacker.Request) bool {
+			return contains(authorizedChannels, botCtx.Event().Channel)
+		},
 		Handler: func(botCtx slacker.BotContext, request slacker.Request, response slacker.ResponseWriter) {
 			maintenance := &maintenance.Maintenances{Maintenance: conn}
 			pdServiceID := request.StringParam("pdservice", "PR1XCPX")
 			toHour := request.StringParam("pdhour", "4h")
-			maintenanceCreateOutls, err := maintenance.CreateMaintenance(pdServiceID, toHour)
+			maintenanceCreateOutls, err := maintenance.Create(pdServiceID, toHour)
 			if err != nil {
-				response.ReportError(errors.New("Oops!"))
+				response.ReportError(errors.New("something went wrong during processing bot command"))
 			}
 			response.Reply(maintenanceCreateOutls)
-
 		},
 	}
 
@@ -158,7 +201,7 @@ func main() {
 		Description: "PagerDuty team list",
 		Example:     "team list",
 		Handler: func(botCtx slacker.BotContext, request slacker.Request, response slacker.ResponseWriter) {
-			team := &team.NewTeam{Team: conn}
+			team := &team.Team{Team: conn}
 			teamOutls := team.PrintTeams()
 			response.Typing()
 			time.Sleep(time.Second)
@@ -166,13 +209,27 @@ func main() {
 		},
 	}
 
+	bot.Command("oncall today", oncallDuty)
 	bot.Command("oncall month <pdschedule>", oncallMonth)
 	bot.Command("incident list <pdteam>", incidentListTeam)
+	bot.Command("incident duty <pdteam> <pdhour>", incidentListTeamDuty)
 	bot.Command("schedule list", scheduleList)
 	bot.Command("team list", teamList)
 	bot.Command("service list <pdteam>", serviceListTeam)
 	bot.Command("maintenance list <pdteam>", maintenanceListTeam)
 	bot.Command("maintenance create <pdservice> <pdhour>", maintenanceCreateTeam)
+
+	authorizedDefinition := &slacker.CommandDefinition{
+		Description: "Very secret stuff",
+		AuthorizationFunc: func(botCtx slacker.BotContext, request slacker.Request) bool {
+			return contains(authorizedChannels, botCtx.Event().Channel)
+		},
+		Handler: func(botCtx slacker.BotContext, request slacker.Request, response slacker.ResponseWriter) {
+			response.Reply("You are authorized!")
+		},
+	}
+
+	bot.Command("secret", authorizedDefinition)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -181,4 +238,13 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func contains(list []string, element string) bool {
+	for _, value := range list {
+		if value == element {
+			return true
+		}
+	}
+	return false
 }
