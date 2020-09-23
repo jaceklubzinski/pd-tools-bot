@@ -11,7 +11,7 @@ type TeamClient interface {
 
 var teamOpts pagerduty.ListTeamOptions
 
-func (c *ApiClient) ListTeams() *pagerduty.ListTeamResponse {
+func (c *APIClient) ListTeams() *pagerduty.ListTeamResponse {
 	eps, err := c.client.ListTeams(teamOpts)
 	base.CheckErr(err)
 	return eps

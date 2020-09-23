@@ -30,3 +30,11 @@ func AddDurationToDate(start string, timer string) (string, error) {
 	timerDuration, err := time.ParseDuration(timer)
 	return startDate.Add(timerDuration).Format(layoutISO), err
 }
+
+//BackDurationToDate go back duration from start date
+func BackDurationToDate(start string, timer string) (string, error) {
+	layoutISO := "2006-01-02 15:04:05"
+	startDate := StringToDate(start)
+	timerDuration, err := time.ParseDuration(timer)
+	return startDate.Add(-timerDuration).Format(layoutISO), err
+}

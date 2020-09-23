@@ -39,22 +39,24 @@ func (u *AdminOnDutyList) UsersOnCallOptions(dutyStartDate, dutyEndDate string, 
 	u.Options.ScheduleIDs = append(u.Options.ScheduleIDs, scheduleID)
 }
 
-func (users *AdminOnDutyList) monthEdges(id int, start, end time.Time) {
-	pdMonthStart := users.AdminsOnDuty[id].start.Month()
-	pdMonthEnd := users.AdminsOnDuty[id].end.Month()
+//monthEdges calculate proper month profit for weekend between months
+func (u *AdminOnDutyList) monthEdges(id int, start, end time.Time) {
+	pdMonthStart := u.AdminsOnDuty[id].start.Month()
+	pdMonthEnd := u.AdminsOnDuty[id].end.Month()
 	monthStart := start.Month()
 	monthEnd := end.Month()
 	durationMonthStart := int(pdMonthStart) - int(monthStart)
 	durationMonthEnd := int(pdMonthEnd) - int(monthEnd)
 	if durationMonthStart < 0 {
-		users.AdminsOnDuty[id].start = start
+		u.AdminsOnDuty[id].start = start
 	}
 	if durationMonthEnd > 0 {
-		users.AdminsOnDuty[id].end = end.AddDate(0, 0, 1)
+		u.AdminsOnDuty[id].end = end.AddDate(0, 0, 1)
 	}
 }
 
-func (users *AdminOnDutyList) typeOfDay(id int) {
+//typeOfDay check type of day
+func (u *AdminOnDutyList) typeOfDay(id int) {
 	c := cal.NewBusinessCalendar()
 	c.AddHoliday(
 		pl.NewYear,
@@ -70,30 +72,32 @@ func (users *AdminOnDutyList) typeOfDay(id int) {
 		pl.ChristmasDayTwo,
 	)
 
-	dutyDurationDays := users.durationDays(id)
-	dayCounter := users.AdminsOnDuty[id].start
+	dutyDurationDays := u.durationDays(id)
+	dayCounter := u.AdminsOnDuty[id].start
 	for i := 0; i < int(dutyDurationDays); i++ {
 		if hol, _, _ := c.IsHoliday(dayCounter); hol {
-			users.AdminsOnDuty[id].holiday++
+			u.AdminsOnDuty[id].holiday++
 		} else if c.IsWorkday(dayCounter) {
-			users.AdminsOnDuty[id].workday++
+			u.AdminsOnDuty[id].workday++
 		} else if cal.IsWeekend(dayCounter) {
-			users.AdminsOnDuty[id].weekend++
+			u.AdminsOnDuty[id].weekend++
 		}
 		dayCounter = dayCounter.AddDate(0, 0, 1)
 	}
 }
 
-func (users *AdminOnDutyList) durationDays(id int) float64 {
-	dutyStartDate := users.AdminsOnDuty[id].start
-	dutyEndDate := users.AdminsOnDuty[id].end
+//durationDays duration in hours for specific user duty
+func (u *AdminOnDutyList) durationDays(id int) float64 {
+	dutyStartDate := u.AdminsOnDuty[id].start
+	dutyEndDate := u.AdminsOnDuty[id].end
 	duration := dutyEndDate.Sub(dutyStartDate).Hours() / 24
 	roundDuration := math.Round(duration*10) / 10
 	return roundDuration
 }
 
-func (users *AdminOnDutyList) getPdUserID(name string) int {
-	for id, user := range users.AdminsOnDuty {
+//getPdUserID user name do PagerDuty ID
+func (u *AdminOnDutyList) getPdUserID(name string) int {
+	for id, user := range u.AdminsOnDuty {
 		if user.name == name {
 			return id
 		}
@@ -101,18 +105,19 @@ func (users *AdminOnDutyList) getPdUserID(name string) int {
 	return -1
 }
 
-func (users *AdminOnDutyList) defineUserParameter(user pagerduty.OnCall, userID *int) {
+//defineUserParameter create user with PagerDuty data
+func (u *AdminOnDutyList) defineUserParameter(user pagerduty.OnCall, userID *int) {
 	var pduser adminOnDuty
 	loc, _ := time.LoadLocation("Europe/Warsaw")
 	if *userID == -1 {
 		pduser.name = user.User.Summary
 		pduser.start, _ = time.ParseInLocation(time.RFC3339, user.Start, loc)
 		pduser.end, _ = time.ParseInLocation(time.RFC3339, user.End, loc)
-		users.AdminsOnDuty = append(users.AdminsOnDuty, pduser)
-		*userID = len(users.AdminsOnDuty) - 1
+		u.AdminsOnDuty = append(u.AdminsOnDuty, pduser)
+		*userID = len(u.AdminsOnDuty) - 1
 	}
-	users.AdminsOnDuty[*userID].start, _ = time.ParseInLocation(time.RFC3339, user.Start, loc)
-	users.AdminsOnDuty[*userID].end, _ = time.ParseInLocation(time.RFC3339, user.End, loc)
+	u.AdminsOnDuty[*userID].start, _ = time.ParseInLocation(time.RFC3339, user.Start, loc)
+	u.AdminsOnDuty[*userID].end, _ = time.ParseInLocation(time.RFC3339, user.End, loc)
 }
 
 // UsersOnCall operation on users on call
@@ -135,10 +140,10 @@ func (u *AdminOnDutyList) UsersOnCall(start, end time.Time) error {
 }
 
 // PrintDutySummary duty summary
-func (users *AdminOnDutyList) PrintDutySummary(profit bool) (strs string) {
+func (u *AdminOnDutyList) PrintDutySummary(profit bool) (strs string) {
 	var total int
-	users.DutyUsersProfits()
-	for _, user := range users.AdminsOnDuty {
+	u.DutyUsersProfits()
+	for _, user := range u.AdminsOnDuty {
 		total = total + user.workday + user.holiday + user.weekend
 		if profit {
 			fmt.Println("Name: ", user.name, " workdays: ", user.workday, " holidays: ", user.holiday, " weekend days: ", user.weekend, " profit: ", user.profit)
@@ -153,10 +158,18 @@ func (users *AdminOnDutyList) PrintDutySummary(profit bool) (strs string) {
 	return strs
 }
 
+// PrintDutySummary duty summary
+func (u *AdminOnDutyList) PrintTodayDuty(schedule string) (strs string) {
+	for _, user := range u.AdminsOnDuty {
+		strs = fmt.Sprintf("Schedule: `%s` On duty: `%s`\n", schedule, user.name)
+	}
+	return strs
+}
+
 // DutyUsersProfits additional profits info
-func (users *AdminOnDutyList) DutyUsersProfits() {
+func (u *AdminOnDutyList) DutyUsersProfits() {
 	p := dutyPay{workday: 100, weekend: 180, holiday: 270}
-	for userID, user := range users.AdminsOnDuty {
-		users.AdminsOnDuty[userID].profit = user.holiday*p.holiday + user.workday*p.workday + user.weekend*p.weekend
+	for userID, user := range u.AdminsOnDuty {
+		u.AdminsOnDuty[userID].profit = user.holiday*p.holiday + user.workday*p.workday + user.weekend*p.weekend
 	}
 }

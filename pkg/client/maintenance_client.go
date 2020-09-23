@@ -9,12 +9,12 @@ type MaintenanceClient interface {
 	CreateMaintenance(o pagerduty.MaintenanceWindow) (*pagerduty.MaintenanceWindow, error)
 }
 
-func (c *ApiClient) ListMaintenance(opts pagerduty.ListMaintenanceWindowsOptions) (*pagerduty.ListMaintenanceWindowsResponse, error) {
+func (c *APIClient) ListMaintenance(opts pagerduty.ListMaintenanceWindowsOptions) (*pagerduty.ListMaintenanceWindowsResponse, error) {
 	eps, err := c.client.ListMaintenanceWindows(opts)
 	return eps, err
 }
 
-func (c *ApiClient) CreateMaintenance(o pagerduty.MaintenanceWindow) (*pagerduty.MaintenanceWindow, error) {
+func (c *APIClient) CreateMaintenance(o pagerduty.MaintenanceWindow) (*pagerduty.MaintenanceWindow, error) {
 	from := "pdbot"
 	eps, err := c.client.CreateMaintenanceWindow(from, o)
 	return eps, err
