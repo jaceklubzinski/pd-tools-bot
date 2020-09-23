@@ -1,7 +1,8 @@
 version: '2.0'
 services:
   pd-tools-bot:
-    image: jlubzinski/pd-tools-bot:v0.0.1 
+    image: jlubzinski/pd-tools-bot:latest
     environment:
       PDBOT_PAGERDUTY_AUTH_TOKEN:
       PDBOT_SLACK_AUTH_TOKEN:
+      PDBOT_PAGER_DUTY_TEAM_ID:
