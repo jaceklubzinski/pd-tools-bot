@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/PagerDuty/go-pagerduty"
@@ -21,8 +22,9 @@ import (
 )
 
 type envConfig struct {
-	PagerdutyAuthToken string `required:"true" split_words:"true"`
-	SlackAuthToken     string `required:"true" split_words:"true"`
+	PagerdutyAuthToken string            `required:"true" split_words:"true"`
+	SlackAuthToken     string            `required:"true" split_words:"true"`
+	PagerDutyTeamID    map[string]string `split_words:"true"`
 }
 
 func main() {
@@ -100,6 +102,10 @@ func main() {
 		Handler: func(botCtx slacker.BotContext, request slacker.Request, response slacker.ResponseWriter) {
 			incident := incident.Incidents{Incident: conn}
 			pdTeam := request.StringParam("pdteam", "PU7IVK3")
+			envPDTeam, ok := env.PagerDutyTeamID[strings.ToUpper(pdTeam)]
+			if ok {
+				pdTeam = envPDTeam
+			}
 			pdTeamList := []string{}
 			pdTeamList = append(pdTeamList, pdTeam)
 			incidentOutls, err := incident.GetTeam(pdTeamList)
@@ -119,6 +125,10 @@ func main() {
 			incident := incident.Incidents{Incident: conn}
 			toHour := request.StringParam("pdhour", "24h")
 			pdTeam := request.StringParam("pdteam", "PU7IVK3")
+			envPDTeam, ok := env.PagerDutyTeamID[strings.ToUpper(pdTeam)]
+			if ok {
+				pdTeam = envPDTeam
+			}
 			pdTeamList := []string{}
 			pdTeamList = append(pdTeamList, pdTeam)
 			incidentOutls, err := incident.GetTeamDuty(pdTeamList, toHour)
@@ -137,6 +147,10 @@ func main() {
 		Handler: func(botCtx slacker.BotContext, request slacker.Request, response slacker.ResponseWriter) {
 			service := &services.Services{Service: conn}
 			pdTeam := request.StringParam("pdteam", "PU7IVK3")
+			envPDTeam, ok := env.PagerDutyTeamID[strings.ToUpper(pdTeam)]
+			if ok {
+				pdTeam = envPDTeam
+			}
 			pdTeamList := []string{}
 			pdTeamList = append(pdTeamList, pdTeam)
 			serviceOutls, err := service.GetTeam(pdTeamList)
@@ -155,6 +169,10 @@ func main() {
 		Handler: func(botCtx slacker.BotContext, request slacker.Request, response slacker.ResponseWriter) {
 			maintenance := &maintenance.Maintenances{Maintenance: conn}
 			pdTeam := request.StringParam("pdteam", "PU7IVK3")
+			envPDTeam, ok := env.PagerDutyTeamID[strings.ToUpper(pdTeam)]
+			if ok {
+				pdTeam = envPDTeam
+			}
 			pdTeamList := []string{}
 			pdTeamList = append(pdTeamList, pdTeam)
 			maintenanceOutls, err := maintenance.Get(pdTeamList)

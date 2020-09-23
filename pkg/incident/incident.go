@@ -42,7 +42,7 @@ func (i *Incidents) GetTeam(teamID []string) (strs string, err error) {
 		return "", err
 	}
 	for _, p := range getTeam.Incidents {
-		strstmp := fmt.Sprintf("Name: %s Created At: %s Status: %s <%s|PD Link>\n", p.Title, p.CreatedAt, p.Status, p.HTMLURL)
+		strstmp := fmt.Sprintf("%s Created At: %s Status: %s <%s|PD Link>\n", p.Title, p.CreatedAt, p.Status, p.HTMLURL)
 		serviceIncidents[p.Service.Summary] = serviceIncidents[p.Service.Summary] + strstmp
 		serviceIncidentsNumber[p.Service.Summary]++
 	}
@@ -77,7 +77,7 @@ func (i *Incidents) GetTeamDuty(teamID []string, startHour string) (strs string,
 		return "", err
 	}
 	for _, p := range getTeam.Incidents {
-		strstmp := fmt.Sprintf("Name: %s Created At: %s Status: %s <%s|PD Link>\n", p.Title, p.CreatedAt, p.Status, p.HTMLURL)
+		strstmp := fmt.Sprintf("%s Created At: %s Status: %s <%s|PD Link>\n", p.Title, p.CreatedAt, p.Status, p.HTMLURL)
 		serviceIncidents[p.Service.Summary] = serviceIncidents[p.Service.Summary] + strstmp
 		serviceIncidentsNumber[p.Service.Summary]++
 	}
