@@ -3,6 +3,8 @@ services:
   pd-tools-bot:
     image: jlubzinski/pd-tools-bot:latest
     environment:
-      PDBOT_PAGERDUTY_AUTH_TOKEN:
+      PDBOT_PAGER_DUTY_AUTH_TOKEN:
       PDBOT_SLACK_AUTH_TOKEN:
       PDBOT_PAGER_DUTY_TEAM_ID:
+      PDBOT_PAGER_DUTY_SCHEDULE_ID
+      PDBOT_SLACK_AUTHORIZED_CHANNELS:

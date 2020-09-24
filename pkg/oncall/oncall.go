@@ -120,7 +120,7 @@ func (u *AdminOnDutyList) defineUserParameter(user pagerduty.OnCall, userID *int
 	u.AdminsOnDuty[*userID].end, _ = time.ParseInLocation(time.RFC3339, user.End, loc)
 }
 
-// UsersOnCall operation on users on call
+//UsersOnCall operation on users on call
 func (u *AdminOnDutyList) UsersOnCall(start, end time.Time) error {
 	users, err := u.OnCall.ListOnCalls(u.Options)
 	if err != nil {
@@ -139,15 +139,13 @@ func (u *AdminOnDutyList) UsersOnCall(start, end time.Time) error {
 	return nil
 }
 
-// PrintDutySummary duty summary
+//PrintDutySummary duty summary for current month
 func (u *AdminOnDutyList) PrintDutySummary(profit bool) (strs string) {
 	var total int
 	u.DutyUsersProfits()
 	for _, user := range u.AdminsOnDuty {
 		total = total + user.workday + user.holiday + user.weekend
 		if profit {
-			fmt.Println("Name: ", user.name, " workdays: ", user.workday, " holidays: ", user.holiday, " weekend days: ", user.weekend, " profit: ", user.profit)
-
 			strstmp := fmt.Sprintf("Name: %s workdays: %d holidays: %d weekend days: %d profit: %d \n", user.name, user.workday, user.holiday, user.weekend, user.profit)
 			strs = strs + strstmp
 		} else {
@@ -158,7 +156,7 @@ func (u *AdminOnDutyList) PrintDutySummary(profit bool) (strs string) {
 	return strs
 }
 
-// PrintDutySummary duty summary
+//PrintTodayDuty today person on duty
 func (u *AdminOnDutyList) PrintTodayDuty(schedule string) (strs string) {
 	for _, user := range u.AdminsOnDuty {
 		strs = fmt.Sprintf("Schedule: `%s` On duty: `%s`\n", schedule, user.name)
@@ -166,7 +164,7 @@ func (u *AdminOnDutyList) PrintTodayDuty(schedule string) (strs string) {
 	return strs
 }
 
-// DutyUsersProfits additional profits info
+//DutyUsersProfits additional profits info
 func (u *AdminOnDutyList) DutyUsersProfits() {
 	p := dutyPay{workday: 100, weekend: 180, holiday: 270}
 	for userID, user := range u.AdminsOnDuty {

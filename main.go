@@ -22,9 +22,11 @@ import (
 )
 
 type envConfig struct {
-	PagerdutyAuthToken string            `required:"true" split_words:"true"`
-	SlackAuthToken     string            `required:"true" split_words:"true"`
-	PagerDutyTeamID    map[string]string `split_words:"true"`
+	PagerDutyAuthToken      string            `required:"true" split_words:"true"`
+	SlackAuthToken          string            `required:"true" split_words:"true"`
+	PagerDutyTeamID         map[string]string `split_words:"true"`
+	PagerDutyScheduleID     map[string]string `split_words:"true"`
+	SlackAuthorizedChannels string            `split_words:"true"`
 }
 
 func main() {
@@ -33,7 +35,10 @@ func main() {
 		log.Fatal(err.Error())
 	}
 
-	pdclient := pagerduty.NewClient(env.PagerdutyAuthToken)
+	fmt.Println(env.PagerDutyScheduleID["LTS"])
+	fmt.Println(env.PagerDutyTeamID["LTS"])
+
+	pdclient := pagerduty.NewClient(env.PagerDutyAuthToken)
 	conn := client.NewAPIClient(pdclient)
 
 	bot := slacker.NewClient(env.SlackAuthToken)
@@ -54,7 +59,7 @@ func main() {
 		fmt.Println(event)
 	})
 
-	authorizedChannels := []string{"G017ZRWTL85"}
+	authorizedChannels := []string{env.SlackAuthorizedChannels}
 
 	oncallDuty := &slacker.CommandDefinition{
 		Description: "PagerDuty today oncall user",
@@ -78,10 +83,14 @@ func main() {
 
 	oncallMonth := &slacker.CommandDefinition{
 		Description: "PagerDuty oncall current month summary with profit",
-		Example:     "oncall month PCKO8FO",
+		Example:     "oncall month lts",
 		Handler: func(botCtx slacker.BotContext, request slacker.Request, response slacker.ResponseWriter) {
 			onCall := &oncall.AdminOnDutyList{OnCall: conn}
-			pdschedule := request.StringParam("pdschedule", "PCKO8FO")
+			pdschedule := request.StringParam("pdschedule", "lts")
+			envPDSchedule, ok := env.PagerDutyScheduleID[strings.ToUpper(pdschedule)]
+			if ok {
+				pdschedule = envPDSchedule
+			}
 			today := time.Now()
 			start := extensions.BeginningOfMonth(today)
 			end := extensions.EndOfMonth(today)
@@ -98,10 +107,10 @@ func main() {
 
 	incidentListTeam := &slacker.CommandDefinition{
 		Description: "PagerDuty list of triggered and acknowledged incident for specific team",
-		Example:     "incident list PHJN9RO",
+		Example:     "incident list lts",
 		Handler: func(botCtx slacker.BotContext, request slacker.Request, response slacker.ResponseWriter) {
 			incident := incident.Incidents{Incident: conn}
-			pdTeam := request.StringParam("pdteam", "PU7IVK3")
+			pdTeam := request.StringParam("pdteam", "lts")
 			envPDTeam, ok := env.PagerDutyTeamID[strings.ToUpper(pdTeam)]
 			if ok {
 				pdTeam = envPDTeam
@@ -120,11 +129,11 @@ func main() {
 
 	incidentListTeamDuty := &slacker.CommandDefinition{
 		Description: "PagerDuty list all incident incident for specific team and since defined hours",
-		Example:     "incident duty PHJN9RO 24h",
+		Example:     "incident duty lts 24h",
 		Handler: func(botCtx slacker.BotContext, request slacker.Request, response slacker.ResponseWriter) {
 			incident := incident.Incidents{Incident: conn}
 			toHour := request.StringParam("pdhour", "24h")
-			pdTeam := request.StringParam("pdteam", "PU7IVK3")
+			pdTeam := request.StringParam("pdteam", "lts")
 			envPDTeam, ok := env.PagerDutyTeamID[strings.ToUpper(pdTeam)]
 			if ok {
 				pdTeam = envPDTeam
@@ -143,10 +152,10 @@ func main() {
 
 	serviceListTeam := &slacker.CommandDefinition{
 		Description: "PagerDuty list of services assigned to specific team",
-		Example:     "service list PHJN9RO",
+		Example:     "service list lts",
 		Handler: func(botCtx slacker.BotContext, request slacker.Request, response slacker.ResponseWriter) {
 			service := &services.Services{Service: conn}
-			pdTeam := request.StringParam("pdteam", "PU7IVK3")
+			pdTeam := request.StringParam("pdteam", "lts")
 			envPDTeam, ok := env.PagerDutyTeamID[strings.ToUpper(pdTeam)]
 			if ok {
 				pdTeam = envPDTeam
@@ -165,10 +174,10 @@ func main() {
 
 	maintenanceListTeam := &slacker.CommandDefinition{
 		Description: "PagerDuty list of service maintenance to specific team",
-		Example:     "maintenace list PHJN9RO",
+		Example:     "maintenace list lts",
 		Handler: func(botCtx slacker.BotContext, request slacker.Request, response slacker.ResponseWriter) {
 			maintenance := &maintenance.Maintenances{Maintenance: conn}
-			pdTeam := request.StringParam("pdteam", "PU7IVK3")
+			pdTeam := request.StringParam("pdteam", "lts")
 			envPDTeam, ok := env.PagerDutyTeamID[strings.ToUpper(pdTeam)]
 			if ok {
 				pdTeam = envPDTeam
@@ -187,13 +196,13 @@ func main() {
 
 	maintenanceCreateTeam := &slacker.CommandDefinition{
 		Description: "PagerDuty create maintenance window for specific service from current time + given duration",
-		Example:     "maintenace create PHJN9RO 4h",
+		Example:     "maintenace create PDSERVICEID 4h",
 		AuthorizationFunc: func(botCtx slacker.BotContext, request slacker.Request) bool {
 			return contains(authorizedChannels, botCtx.Event().Channel)
 		},
 		Handler: func(botCtx slacker.BotContext, request slacker.Request, response slacker.ResponseWriter) {
 			maintenance := &maintenance.Maintenances{Maintenance: conn}
-			pdServiceID := request.StringParam("pdservice", "PR1XCPX")
+			pdServiceID := request.StringParam("pdservice", "PDSERVICEID")
 			toHour := request.StringParam("pdhour", "4h")
 			maintenanceCreateOutls, err := maintenance.Create(pdServiceID, toHour)
 			if err != nil {
