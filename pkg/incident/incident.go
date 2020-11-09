@@ -37,12 +37,21 @@ func (i *Incidents) GetTeam(teamID []string) (strs string, err error) {
 		SortBy:   "created_at",
 		Statuses: []string{"triggered", "acknowledged"},
 	}
+
 	getTeam, err := i.Incident.ListIncidents(opts)
 	if err != nil {
 		return "", err
 	}
 	for _, p := range getTeam.Incidents {
-		strstmp := fmt.Sprintf("%s Created At: %s Status: %s <%s|PD Link>\n", p.Title, p.CreatedAt, p.Status, p.HTMLURL)
+		note, err := i.Incident.ListIncidentNotes(p.Id)
+		if err != nil {
+			return "", err
+		}
+		if note == "" {
+			note = "Missing"
+		}
+
+		strstmp := fmt.Sprintf("%s Created At: %s Status: %s Note: %s PD: <%s|Link>\n", p.Title, p.CreatedAt, p.Status, note, p.HTMLURL)
 		serviceIncidents[p.Service.Summary] = serviceIncidents[p.Service.Summary] + strstmp
 		serviceIncidentsNumber[p.Service.Summary]++
 	}
