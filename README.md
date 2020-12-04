@@ -12,9 +12,12 @@ docker compose [deployments/docker-compose.yml](deployments/docker-compose.yml) 
 # required
 PDBOT_PAGER_DUTY_AUTH_TOKEN:
 PDBOT_SLACK_AUTH_TOKEN:
+PDBOT_DUTY_PAY="holiday:xx,workday:xx,weekend:xx"
 # optional
+## to use short names instead of PD ids
 PDBOT_PAGER_DUTY_TEAM_ID: "teamName:teamID,teamName:teamID"
 PDBOT_PAGER_DUTY_SCHEDULE_ID: "scheduleName:scheduleID,scheduleName:scheduleID"
+## channel authorized to set maintenance mode
 PDBOT_SLACK_AUTHORIZED_CHANNELS:
 ```
 # Supported slack command
@@ -22,7 +25,7 @@ PDBOT_SLACK_AUTHORIZED_CHANNELS:
 help - help
 oncall today - PagerDuty today oncall user
 Example: oncall today
-oncall month pdschedule - PagerDuty oncall current month summary with profit
+oncall month lts current|next|prev - PagerDuty oncall current/next/prev month summary with profit
 Example: oncall month lts
 incident list pdteam - PagerDuty list of triggered and acknowledged incident for specific team
 Example: incident list lts

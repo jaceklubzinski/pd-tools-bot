@@ -24,6 +24,7 @@ import (
 type envConfig struct {
 	PagerDutyAuthToken      string            `required:"true" split_words:"true"`
 	SlackAuthToken          string            `required:"true" split_words:"true"`
+	DutyPay                 map[string]int    `required:"true" split_words:"true"`
 	PagerDutyTeamID         map[string]string `split_words:"true"`
 	PagerDutyScheduleID     map[string]string `split_words:"true"`
 	SlackAuthorizedChannels string            `split_words:"true"`
@@ -83,21 +84,33 @@ func main() {
 
 	oncallMonth := &slacker.CommandDefinition{
 		Description: "PagerDuty oncall current month summary with profit",
-		Example:     "oncall month lts",
+		Example:     "oncall month lts current|next|prev",
 		Handler: func(botCtx slacker.BotContext, request slacker.Request, response slacker.ResponseWriter) {
+			var period, today time.Time
 			onCall := &oncall.AdminOnDutyList{OnCall: conn}
 			pdschedule := request.StringParam("pdschedule", "lts")
+			userPeriod := request.StringParam("period", "current")
 			envPDSchedule, ok := env.PagerDutyScheduleID[strings.ToUpper(pdschedule)]
 			if ok {
 				pdschedule = envPDSchedule
 			}
-			today := time.Now()
-			start := extensions.BeginningOfMonth(today)
-			end := extensions.EndOfMonth(today)
+			today = time.Now()
+			if userPeriod == "current" {
+				period = today
+			}
+			if userPeriod == "prev" {
+				period = today.AddDate(0, -1, 0)
+			}
+			if userPeriod == "next" {
+				period = today.AddDate(0, 1, 0)
+			}
+			start := extensions.BeginningOfMonth(period)
+			end := extensions.EndOfMonth(period)
 			onCall.UsersOnCallOptions(start.String(), end.String(), pdschedule)
 			if err := onCall.UsersOnCall(start, end); err != nil {
 				response.ReportError(errors.New("something went wrong during processing bot command"))
 			}
+			onCall.DutyUsersProfits(env.DutyPay)
 			oncall := onCall.PrintDutySummary(true)
 			response.Typing()
 			time.Sleep(time.Second)
@@ -237,7 +250,7 @@ func main() {
 	}
 
 	bot.Command("oncall today", oncallDuty)
-	bot.Command("oncall month <pdschedule>", oncallMonth)
+	bot.Command("oncall month <pdschedule> <period>", oncallMonth)
 	bot.Command("incident list <pdteam>", incidentListTeam)
 	bot.Command("incident duty <pdteam> <pdhour>", incidentListTeamDuty)
 	bot.Command("schedule list", scheduleList)
