@@ -185,7 +185,6 @@ func (u *AdminOnDutyList) PrintTodayDuty(schedule string) (strs string) {
 
 //DutyUsersProfits additional profits info
 func (u *AdminOnDutyList) DutyUsersProfits(pay map[string]int) {
-	//p := dutyPay{workday: 100, weekend: 180, holiday: 270}
 	for userID, user := range u.AdminsOnDuty {
 		u.AdminsOnDuty[userID].profit = user.holiday*pay["holiday"] + user.workday*pay["workday"] + user.weekend*pay["weekend"]
 	}
