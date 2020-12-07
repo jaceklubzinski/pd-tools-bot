@@ -26,10 +26,6 @@ type AdminOnDutyList struct {
 	Options      pagerduty.ListOnCallOptions
 }
 
-type dutyPay struct {
-	workday, weekend, holiday int
-}
-
 // UsersOnCallOptions Set options for PagderDuty
 func (u *AdminOnDutyList) UsersOnCallOptions(dutyStartDate, dutyEndDate string, scheduleID string) {
 	u.Options.Since = dutyStartDate
@@ -57,7 +53,23 @@ func (u *AdminOnDutyList) monthEdges(id int, start, end time.Time) {
 
 //typeOfDay check type of day
 func (u *AdminOnDutyList) typeOfDay(id int) {
+	ChristmasDayZero := &cal.Holiday{
+		Name:  "ChristmasDayZero",
+		Type:  cal.ObservancePublic,
+		Month: time.December,
+		Day:   24,
+		Func:  cal.CalcDayOfMonth,
+	}
+	NewYearZero := &cal.Holiday{
+		Name:  "NewYearZero",
+		Type:  cal.ObservancePublic,
+		Month: time.December,
+		Day:   31,
+		Func:  cal.CalcDayOfMonth,
+	}
+
 	c := cal.NewBusinessCalendar()
+
 	c.AddHoliday(
 		pl.NewYear,
 		pl.ThreeKings,
@@ -70,6 +82,8 @@ func (u *AdminOnDutyList) typeOfDay(id int) {
 		pl.NationalIndependenceDay,
 		pl.ChristmasDayOne,
 		pl.ChristmasDayTwo,
+		ChristmasDayZero,
+		NewYearZero,
 	)
 
 	dutyDurationDays := u.durationDays(id)
@@ -90,8 +104,9 @@ func (u *AdminOnDutyList) typeOfDay(id int) {
 func (u *AdminOnDutyList) durationDays(id int) float64 {
 	dutyStartDate := u.AdminsOnDuty[id].start
 	dutyEndDate := u.AdminsOnDuty[id].end
-	duration := dutyEndDate.Sub(dutyStartDate).Hours() / 24
+	duration := dutyEndDate.Sub(dutyStartDate).Hours() / 22 // 22h in case 2h will be temporary changed to other user
 	roundDuration := math.Round(duration*10) / 10
+	fmt.Printf("duration: %f round: %f\n", duration, roundDuration)
 	return roundDuration
 }
 
@@ -142,7 +157,6 @@ func (u *AdminOnDutyList) UsersOnCall(start, end time.Time) error {
 //PrintDutySummary duty summary for current month
 func (u *AdminOnDutyList) PrintDutySummary(profit bool) (strs string) {
 	var total int
-	u.DutyUsersProfits()
 	for _, user := range u.AdminsOnDuty {
 		total = total + user.workday + user.holiday + user.weekend
 		if profit {
@@ -165,9 +179,8 @@ func (u *AdminOnDutyList) PrintTodayDuty(schedule string) (strs string) {
 }
 
 //DutyUsersProfits additional profits info
-func (u *AdminOnDutyList) DutyUsersProfits() {
-	p := dutyPay{workday: 100, weekend: 180, holiday: 270}
+func (u *AdminOnDutyList) DutyUsersProfits(pay map[string]int) {
 	for userID, user := range u.AdminsOnDuty {
-		u.AdminsOnDuty[userID].profit = user.holiday*p.holiday + user.workday*p.workday + user.weekend*p.weekend
+		u.AdminsOnDuty[userID].profit = user.holiday*pay["holiday"] + user.workday*pay["workday"] + user.weekend*pay["weekend"]
 	}
 }
