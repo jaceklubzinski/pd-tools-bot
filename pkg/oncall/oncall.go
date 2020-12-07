@@ -26,10 +26,6 @@ type AdminOnDutyList struct {
 	Options      pagerduty.ListOnCallOptions
 }
 
-type dutyPay struct {
-	workday, weekend, holiday int
-}
-
 // UsersOnCallOptions Set options for PagderDuty
 func (u *AdminOnDutyList) UsersOnCallOptions(dutyStartDate, dutyEndDate string, scheduleID string) {
 	u.Options.Since = dutyStartDate
@@ -57,7 +53,6 @@ func (u *AdminOnDutyList) monthEdges(id int, start, end time.Time) {
 
 //typeOfDay check type of day
 func (u *AdminOnDutyList) typeOfDay(id int) {
-
 	ChristmasDayZero := &cal.Holiday{
 		Name:  "ChristmasDayZero",
 		Type:  cal.ObservancePublic,
