@@ -31,6 +31,7 @@ github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZN
 github.com/posener/complete v1.1.1/go.mod h1:em0nMJCgc9GFtwrmVmEMR/ZL6WyhyjMBndrE9hABlRI=
 github.com/rickar/cal/v2 v2.0.0-beta.2 h1:H1KVaXNrddB6wt2AQ4YZXk41Xqzc8FTJuQ49aRcrfC4=
 github.com/rickar/cal/v2 v2.0.0-beta.2/go.mod h1:/fdlMcx7GjPlIBibMzOM9gMvDBsrK+mOtRXdTzUqV/A=
+github.com/rickar/cal/v2 v2.0.0/go.mod h1:/fdlMcx7GjPlIBibMzOM9gMvDBsrK+mOtRXdTzUqV/A=
 github.com/shomali11/commander v0.0.0-20191122162317-51bc574c29ba h1:EDb+FfzJD5OTWxKE5LQaM6oiScfzNVmzjgCfWziLDkA=
 github.com/shomali11/commander v0.0.0-20191122162317-51bc574c29ba/go.mod h1:bYyJw/Aj9fK+qoFmRbPJeWsDgq7WGO8f/Qof95qPug4=
 github.com/shomali11/proper v0.0.0-20180607004733-233a9a872c30 h1:56awf1OXG6Jc2Pk1saojpCzpzkoBvlqecCyNLY+wwkc=
