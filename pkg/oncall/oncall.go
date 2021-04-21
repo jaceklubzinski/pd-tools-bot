@@ -68,6 +68,11 @@ func (u *AdminOnDutyList) typeOfDay(id int) {
 		Func:  cal.CalcDayOfMonth,
 	}
 
+	EasterSunday := &cal.Holiday{
+		Name:   "Easter Sunday",
+		Offset: 0,
+		Func:   cal.CalcEasterOffset,
+	}
 	c := cal.NewBusinessCalendar()
 
 	c.AddHoliday(
@@ -84,6 +89,7 @@ func (u *AdminOnDutyList) typeOfDay(id int) {
 		pl.ChristmasDayTwo,
 		ChristmasDayZero,
 		NewYearZero,
+		EasterSunday,
 	)
 
 	dutyDurationDays := u.durationDays(id)
